@@ -10,16 +10,36 @@ services:
       - DB_PASSWORD=1212
       - MANAGEMENT_TRACING_ENABLED=true
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -XX:ActiveProcessorCount=2 -Xss512k -XX:+ExitOnOutOfMemoryError
+      - SERVER_TOMCAT_THREADS_MAX=50
+      - SERVER_TOMCAT_THREADS_MIN_SPARE=10
+      - SERVER_TOMCAT_ACCEPT_COUNT=100
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      - SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD=60000
     ports:
       - "8081:8081"
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/busybox/wget", "-qO-", "http://localhost:8081/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    stop_grace_period: 30s
     depends_on:
       catelog-db:
+        condition: service_healthy
+      bookstore-rabbitmq:
         condition: service_healthy
     deploy:
       resources:
         limits:
           memory: 700m
+          cpus: "2.0"
+        reservations:
+          memory: 400m
+          cpus: "1.0"
     labels:
       logging: "promtail"
 
@@ -39,9 +59,23 @@ services:
       - OAUTH2_SERVER_URL=http://keycloak:9191
       - MANAGEMENT_TRACING_ENABLED=true
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -XX:ActiveProcessorCount=2 -Xss512k -XX:+ExitOnOutOfMemoryError
+      - SERVER_TOMCAT_THREADS_MAX=50
+      - SERVER_TOMCAT_THREADS_MIN_SPARE=10
+      - SERVER_TOMCAT_ACCEPT_COUNT=100
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      - SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD=60000
     ports:
       - "8085:8085"
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/busybox/wget", "-qO-", "http://localhost:8085/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    stop_grace_period: 30s
     depends_on:
       orders-db:
         condition: service_healthy
@@ -51,6 +85,10 @@ services:
       resources:
         limits:
           memory: 700m
+          cpus: "2.0"
+        reservations:
+          memory: 400m
+          cpus: "1.0"
     labels:
       logging: "promtail"
 
@@ -70,9 +108,26 @@ services:
       - MAIL_PORT=1025
       - MANAGEMENT_TRACING_ENABLED=true
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -XX:ActiveProcessorCount=1 -Xss512k -XX:+ExitOnOutOfMemoryError
+      - SPRING_RABBITMQ_LISTENER_SIMPLE_CONCURRENCY=2
+      - SPRING_RABBITMQ_LISTENER_SIMPLE_MAX_CONCURRENCY=5
+      - SPRING_RABBITMQ_LISTENER_SIMPLE_PREFETCH=10
+      - SERVER_TOMCAT_THREADS_MAX=30
+      - SERVER_TOMCAT_THREADS_MIN_SPARE=5
+      - SERVER_TOMCAT_ACCEPT_COUNT=100
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      - SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD=60000
     ports:
       - "8087:8087"
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/busybox/wget", "-qO-", "http://localhost:8087/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    stop_grace_period: 30s
     depends_on:
       notifications-db:
         condition: service_healthy
@@ -83,7 +138,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 700m
+          memory: 512m
+          cpus: "1.0"
     labels:
       logging: "promtail"
 
@@ -96,13 +152,34 @@ services:
       - ORDER_URL=http://order:8085
       - MANAGEMENT_TRACING_ENABLED=true
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - REACTOR_NETTY_IOWORKERCOUNT=4
+      - REACTOR_NETTY_POOL_MAXCONNECTIONS=500
+      - REACTOR_NETTY_POOL_MAXIDLETIME=20s
+      - SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE=20s
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=70.0 -XX:+UseZGC -XX:+ZGenerational -XX:ActiveProcessorCount=2 -Xss256k -XX:+ExitOnOutOfMemoryError
     ports:
       - "8989:8989"
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/busybox/wget", "-qO-", "http://localhost:8989/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
+    depends_on:
+      order:
+        condition: service_healthy
+      catelog:
+        condition: service_healthy
     deploy:
       resources:
         limits:
-          memory: 700m
+          memory: 512m
+          cpus: "2.0"
+        reservations:
+          memory: 256m
+          cpus: "1.0"
     labels:
       logging: "promtail"
 
@@ -115,12 +192,33 @@ services:
       - OAUTH2_SERVER_URL=http://keycloak:9191
       - MANAGEMENT_TRACING_ENABLED=true
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:9411/api/v2/spans
+      - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseZGC -XX:+ZGenerational -XX:ActiveProcessorCount=2 -Xss512k -XX:+ExitOnOutOfMemoryError
+      - SERVER_TOMCAT_THREADS_MAX=50
+      - SERVER_TOMCAT_THREADS_MIN_SPARE=10
+      - SERVER_TOMCAT_ACCEPT_COUNT=100
+      - SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10
+      - SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2
+      - SPRING_DATASOURCE_HIKARI_LEAK_DETECTION_THRESHOLD=60000
     ports:
       - "8080:8080"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/busybox/wget", "-qO-", "http://localhost:8080/actuator/health" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    stop_grace_period: 30s
     deploy:
       resources:
         limits:
           memory: 700m
+          cpus: "2.0"
+        reservations:
+          memory: 400m
+          cpus: "1.0"
     labels:
       logging: "promtail"

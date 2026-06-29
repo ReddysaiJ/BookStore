@@ -4,6 +4,13 @@ services:
   catelog-db:
     image: postgres:15-alpine
     container_name: catelog-db
+    command: >
+      postgres
+      -c max_connections=50
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1212
@@ -19,10 +26,18 @@ services:
       resources:
         limits:
           memory: 500m
+          cpus: "1.0"
 
   orders-db:
     image: postgres:15-alpine
     container_name: orders-db
+    command: >
+      postgres
+      -c max_connections=50
+      -c shared_buffers=128MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1212
@@ -38,6 +53,7 @@ services:
       resources:
         limits:
           memory: 500m
+          cpus: "1.0"
 
   bookstore-rabbitmq:
     image: rabbitmq:3.12.11-management
@@ -45,6 +61,7 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=1212
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit vm_memory_high_watermark 0.4
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -57,10 +74,17 @@ services:
       resources:
         limits:
           memory: 500m
+          cpus: "1.0"
 
   notifications-db:
     image: postgres:15-alpine
     container_name: notifications-db
+    command: >
+      postgres
+      -c max_connections=20
+      -c shared_buffers=64MB
+      -c effective_cache_size=128MB
+      -c work_mem=4MB
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=1212
@@ -75,7 +99,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 500m
+          memory: 300m
+          cpus: "0.5"
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
@@ -83,6 +108,11 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.25"
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.2
@@ -96,7 +126,14 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=1212
     ports:
       - "9191:9191"
+    healthcheck:
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/9191" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     deploy:
       resources:
         limits:
-          memory: 2gb
+          memory: 1536m
+          cpus: "1.0"

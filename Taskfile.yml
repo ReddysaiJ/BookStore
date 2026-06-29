@@ -18,13 +18,25 @@ tasks:
     cmds:
       - "{{.MVNW}} clean verify"
 
+#  build:
+#    cmds:
+#      - "{{.MVNW}} -pl Catelog spring-boot:build-image -DskipTests"
+#      - "{{.MVNW}} -pl order spring-boot:build-image -DskipTests"
+#      - "{{.MVNW}} -pl notification spring-boot:build-image -DskipTests"
+#      - "{{.MVNW}} -pl api-gateway spring-boot:build-image -DskipTests"
+#      - "{{.MVNW}} -pl bookstore-webapp spring-boot:build-image -DskipTests"
   build:
     cmds:
-      - "{{.MVNW}} -pl Catelog spring-boot:build-image -DskipTests"
-      - "{{.MVNW}} -pl order spring-boot:build-image -DskipTests"
-      - "{{.MVNW}} -pl notification spring-boot:build-image -DskipTests"
-      - "{{.MVNW}} -pl api-gateway spring-boot:build-image -DskipTests"
-      - "{{.MVNW}} -pl bookstore-webapp spring-boot:build-image -DskipTests"
+      - "{{.MVNW}} -pl Catelog clean package -DskipTests"
+      - "docker build -t reddysai21/bookstore-catelog ./catelog"
+      - "{{.MVNW}} -pl order clean package -DskipTests"
+      - "docker build -t reddysai21/bookstore-order ./order"
+      - "{{.MVNW}} -pl notification clean package -DskipTests"
+      - "docker build -t reddysai21/bookstore-notification ./notification"
+      - "{{.MVNW}} -pl api-gateway clean package -DskipTests"
+      - "docker build -t reddysai21/bookstore-api-gateway ./api-gateway"
+      - "{{.MVNW}} -pl bookstore-webapp clean package -DskipTests"
+      - "docker build -t reddysai21/bookstore-bookstore-webapp ./bookstore-webapp"
 
   start_infra:
     cmds:

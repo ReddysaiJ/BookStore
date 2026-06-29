@@ -110,6 +110,9 @@
 					<image>
 						<name>${dockerImageName}</name>
 					</image>
+					<layers>
+						<enabled>true</enabled>
+					</layers>
 				</configuration>
 				<executions>
 					<execution>

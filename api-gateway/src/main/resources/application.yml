@@ -51,6 +51,13 @@ spring:
                 allowed-methods: "*"
                 allowed-headers: "*"
                 allow-credentials: false
+          httpclient:
+            connect-timeout: 5000
+            response-timeout: 10s
+            pool:
+              max-connections: 500
+              max-idle-time: 20s
+              acquire-timeout: 5000
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers RETAIN_FIRST
 
